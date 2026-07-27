@@ -2,6 +2,24 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
+  const preloader = document.getElementById('preloader');
+
+  const hidePreloader = () => {
+    if (!preloader) return;
+    preloader.classList.add('hide');
+    setTimeout(() => {
+      if (preloader.parentNode) {
+        preloader.remove();
+      }
+    }, 600);
+  };
+
+  if (document.readyState === 'complete') {
+    setTimeout(hidePreloader, 400);
+  } else {
+    window.addEventListener('load', hidePreloader, { once: true });
+  }
+
   /* ---------- Smooth Scroll ---------- */
   document.querySelectorAll('a[href^="#"]').forEach(link => {
     link.addEventListener('click', e => {

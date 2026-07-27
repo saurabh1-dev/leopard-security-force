@@ -919,6 +919,19 @@ ul {
     display: none;
   }
 
+  .training-page-content .hero-frame {
+    padding: 42px 20px 36px;
+    border: 1px solid rgba(255,255,255,0.55);
+  }
+
+  .training-page-content .hero-frame::before,
+  .training-page-content .hero-frame::after,
+  .training-page-content .hero-frame .br-tr,
+  .training-page-content .hero-frame .br-bl {
+    width: 22px;
+    height: 22px;
+  }
+
   .nav-contact-cta {
     min-height: 40px;
     padding: 10px 16px;
@@ -8240,6 +8253,390 @@ ul {
   line-height: 1.55;
   margin: 0;
   font-weight: 300;
+}
+
+/* ==========================================================================
+   TRAINING PAGE — NEW SECTION STYLES
+   ========================================================================== */
+.training-page-content {
+  background: #050505;
+  color: #ffffff;
+  padding-top: 72px;
+}
+
+.training-page-content .hero {
+  border-bottom: 2px solid #ffffff;
+  padding: 52px 40px 70px;
+  position: relative;
+  z-index: 1;
+}
+
+.training-page-content .hero-frame {
+  position: relative;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 56px 40px 48px;
+  border: 1px solid rgba(255,255,255,0.85);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.08);
+  text-align: center;
+  background: #050505;
+}
+
+.training-page-content .hero-frame::before,
+.training-page-content .hero-frame::after,
+.training-page-content .hero-frame .br-tr,
+.training-page-content .hero-frame .br-bl {
+  content: "";
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border: #ff2d3a solid;
+  z-index: 3;
+  box-sizing: border-box;
+}
+
+.training-page-content .hero-frame::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+.training-page-content .hero-frame::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+.training-page-content .hero-frame .br-tr { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+.training-page-content .hero-frame .br-bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+
+.training-page-content .doc-id {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: #ff2d3a;
+  letter-spacing: 0.12em;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+
+.training-page-content .hero-frame h1 {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: clamp(2rem, 4.6vw, 3.6rem);
+  line-height: 1.08;
+  margin: 0 auto;
+  max-width: 17ch;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.training-page-content .hero-frame .lede {
+  margin: 22px auto 0;
+  color: #9b9b9b;
+  max-width: 50ch;
+  font-size: 1rem;
+}
+
+.training-page-content .hero-actions {
+  display: flex;
+  gap: 0;
+  margin-top: 34px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.training-page-content .btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 16px 28px;
+  text-decoration: none;
+  display: inline-block;
+  border: 2px solid #ffffff;
+  transition: background .2s, color .2s;
+  border-radius: 0;
+}
+
+.training-page-content .btn-fill {
+  background: #ffffff;
+  color: #000000;
+}
+
+.training-page-content .btn-fill:hover {
+  background: #ff2d3a;
+  border-color: #ff2d3a;
+  color: #ffffff;
+}
+
+.training-page-content .btn-outline { color: #ffffff; }
+.training-page-content .btn-outline:hover { color: #ff2d3a; }
+.training-page-content .hero-actions .btn-outline { border-left: none; }
+
+.training-page-content section {
+  border-bottom: 2px solid #ffffff;
+  padding: 70px 0;
+}
+
+.training-page-content .sec-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  margin-bottom: 50px;
+}
+
+.training-page-content .sec-head .idx {
+  font-family: 'JetBrains Mono', monospace;
+  color: #ff2d3a;
+  font-size: 0.85rem;
+}
+
+.training-page-content .sec-head h2 {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: clamp(1.8rem, 3.6vw, 2.8rem);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.training-page-content .sec-head p {
+  color: #9b9b9b;
+  max-width: 52ch;
+  font-size: 0.92rem;
+  margin: 0;
+}
+
+.training-page-content .filmstrip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid rgba(255,255,255,0.14);
+  border-left: 1px solid rgba(255,255,255,0.14);
+}
+
+.training-page-content .phase-card {
+  position: relative;
+  padding: 30px 26px 34px;
+  border-right: 1px solid rgba(255,255,255,0.14);
+  border-bottom: 1px solid rgba(255,255,255,0.14);
+  overflow: hidden;
+  min-height: 340px;
+  background: rgba(255,255,255,0.02);
+}
+
+.training-page-content .phase-card .ghost {
+  position: absolute;
+  top: -30px;
+  right: -10px;
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 7rem;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255,255,255,0.09);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.training-page-content .phase-card .dur {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: #ff2d3a;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.training-page-content .phase-card h3 {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 1.15rem;
+  margin: 14px 0 14px;
+  line-height: 1.15;
+  position: relative;
+  text-transform: uppercase;
+}
+
+.training-page-content .phase-card p {
+  color: #9b9b9b;
+  font-size: 0.86rem;
+  margin: 0;
+  position: relative;
+}
+
+.training-page-content .triad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.training-page-content .triad-col {
+  padding: 0 36px;
+  border-left: 1px solid rgba(255,255,255,0.14);
+}
+
+.training-page-content .triad-col:first-child { padding-left: 0; border-left: none; }
+
+.training-page-content .triad-col h3 {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 1.05rem;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+
+.training-page-content .triad-col ul { list-style: none; margin: 0; padding: 0; }
+.training-page-content .triad-col li {
+  padding: 14px 0;
+  border-top: 1px solid rgba(255,255,255,0.14);
+  font-size: 0.88rem;
+  color: #9b9b9b;
+}
+
+.training-page-content .triad-col li:first-of-type { border-top: none; }
+.training-page-content .triad-col li b { color: #ffffff; font-weight: 600; }
+
+.training-page-content .track-list { border-top: 1px solid rgba(255,255,255,0.14); }
+.training-page-content .track-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 1.4fr;
+  gap: 24px;
+  padding: 26px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.14);
+  align-items: baseline;
+}
+
+.training-page-content .track-row .tid {
+  font-family: 'JetBrains Mono', monospace;
+  color: #ff2d3a;
+  font-size: 0.82rem;
+}
+
+.training-page-content .track-row h3 {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 1.02rem;
+  text-transform: uppercase;
+}
+
+.training-page-content .track-row p {
+  color: #9b9b9b;
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.training-page-content .ticker {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.training-page-content .tick {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 30px;
+  border-left: 1px solid rgba(255,255,255,0.14);
+  text-align: left;
+}
+
+.training-page-content .tick:first-child { border-left: none; padding-left: 0; }
+.training-page-content .tick .num {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 2.4rem;
+  color: #ff2d3a;
+}
+
+.training-page-content .tick .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: #9b9b9b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 8px;
+}
+
+.training-page-content .cta {
+  border-bottom: none;
+  padding: 90px 40px;
+  text-align: center;
+  position: relative;
+}
+
+.training-page-content .cta::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #ff2d3a;
+}
+
+.training-page-content .cta .idx {
+  font-family: 'JetBrains Mono', monospace;
+  color: #ff2d3a;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+}
+
+.training-page-content .cta h2 {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: clamp(2rem,4.4vw,3.4rem);
+  max-width: 18ch;
+  margin: 16px auto 20px;
+  text-transform: uppercase;
+}
+
+.training-page-content .cta p {
+  color: #9b9b9b;
+  max-width: 56ch;
+  margin: 0 auto 36px;
+}
+
+.training-page-content .cta-actions {
+  display: inline-flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.training-page-content .hero-stats {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-top: 46px;
+  border-top: 1px solid rgba(255,255,255,0.14);
+  padding-top: 26px;
+}
+
+.training-page-content .hero-stats .hs {
+  padding: 0 26px;
+  border-left: 1px solid rgba(255,255,255,0.14);
+  text-align: left;
+}
+
+.training-page-content .hero-stats .hs:first-child { border-left: none; padding-left: 0; }
+.training-page-content .hero-stats .hs dt {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: #5a5a5a;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.training-page-content .hero-stats .hs dd {
+  margin: 4px 0 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.86rem;
+  color: #ffffff;
+}
+
+.training-page-content .hero-stats .hs dd.alert { color: #ff2d3a; }
+
+@media (max-width: 920px) {
+  .training-page-content .filmstrip { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 880px) {
+  .training-page-content .triad { grid-template-columns: 1fr; }
+  .training-page-content .triad-col { border-left: none; border-top: 1px solid rgba(255,255,255,0.14); padding: 30px 0 0; margin-top: 30px; }
+  .training-page-content .triad-col:first-child { border-top: none; margin-top: 0; padding-top: 0; }
+}
+
+@media (max-width: 760px) {
+  .training-page-content .hero-stats .hs { border-left: none; border-top: 1px solid rgba(255,255,255,0.14); padding: 14px 0; width: 100%; }
+  .training-page-content .track-row { grid-template-columns: 1fr; gap: 6px; }
+  .training-page-content .tick { border-left: none; border-top: 1px solid rgba(255,255,255,0.14); padding: 20px 0; }
+  .training-page-content .tick:first-child { border-top: none; padding-top: 0; }
+}
+
+@media (max-width: 560px) {
+  .training-page-content .filmstrip { grid-template-columns: 1fr; }
+  .training-page-content .hero { padding: 60px 20px 70px; }
+  .training-page-content .hero-frame { padding: 42px 20px 36px; }
 }
 
 /* ==========================================================================

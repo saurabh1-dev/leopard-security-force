@@ -647,6 +647,88 @@
       color: rgba(255, 255, 255, .5);
     }
 
+    /* Star Rating */
+    .intake-stars {
+      display: flex;
+      gap: .45rem;
+      justify-content: center;
+      margin: .5rem 0 1rem;
+    }
+
+    .intake-star-btn {
+      background: none;
+      padding: .2rem;
+      border-radius: 8px;
+      transition: transform .15s ease;
+      border: none;
+      cursor: pointer;
+    }
+
+    .intake-star-btn:hover {
+      transform: scale(1.15);
+    }
+
+    .intake-star-btn svg {
+      width: 36px;
+      height: 36px;
+      stroke: rgba(255, 255, 255, .15);
+      stroke-width: 1.5;
+      fill: transparent;
+      transition: fill .15s ease, stroke .15s ease;
+    }
+
+    .intake-star-btn.active svg {
+      fill: #e50914;
+      stroke: #ff4444;
+    }
+
+    .intake-rating-hint {
+      text-align: center;
+      font-size: .78rem;
+      color: #888;
+      min-height: 1.2em;
+      margin-bottom: .8rem;
+    }
+
+    .intake-rating-hint.good {
+      color: #4CAF50;
+    }
+
+    .intake-rating-hint.low {
+      color: #ff6666;
+    }
+
+    /* Textarea */
+    .intake-field textarea {
+      width: 100%;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 8px;
+      padding: .75rem 1rem;
+      color: #f0f0f0;
+      font-size: .88rem;
+      outline: none;
+      transition: border-color .2s;
+      resize: vertical;
+      min-height: 80px;
+      font-family: inherit;
+    }
+
+    .intake-field textarea:focus {
+      border-color: #e50914;
+    }
+
+    /* Success pings green */
+    .intake-ping-green {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(76, 175, 80, .7);
+      box-shadow: 0 0 8px 3px rgba(76, 175, 80, .4);
+      animation: intakeDrift linear infinite;
+    }
+
     @media (max-width:640px) {
       .intake-options {
         grid-template-columns: 1fr;
@@ -664,7 +746,55 @@
 
 <body>
 
+  <!-- ========== INTAKE OVERLAY (7-Step Wizard) ========== -->
+  <div id="intakeOverlay" style="display:none;">
+    <canvas id="intakeCanvas"></canvas>
+    <div class="intake-dot-grid"></div>
+    <div class="intake-vignette"></div>
+    <div class="intake-radar">
+      <div class="intake-radar-sweep"></div>
+    </div>
+    <div id="intakePings"></div>
 
+    <div class="intake-brand">
+      <div class="ibname">Leopard Security Force</div>
+      <div class="ibsub">Premium Protection Intake</div>
+    </div>
+
+    <div class="intake-progress" id="intakeProgressWrap">
+      <div class="intake-progress-top">
+        <span class="ipl">Clearance Intake</span>
+        <span id="intakeStepCount">01 / 07</span>
+      </div>
+      <div class="intake-progress-track">
+        <div class="intake-progress-fill" id="intakeProgressFill" style="width:14%"></div>
+      </div>
+    </div>
+
+    <div id="intakeStepArea"></div>
+
+    <button class="intake-skip" id="intakeSkipBtn">Skip for now</button>
+  </div>
+
+  <!-- ========== INTAKE SUCCESS SCREEN ========== -->
+  <div id="intakeSuccess">
+    <div class="is-glow"></div>
+    <div id="isStars"></div>
+    <div id="isPings"></div>
+    <div class="is-content">
+      <div class="is-check">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+          <path d="M4 12.5L9.5 18L20 6" stroke="#4CAF50" stroke-width="2.5" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </div>
+      <h1 id="isThankName">Thank You, Guest.</h1>
+      <p id="isThankMsg">Your request has been received successfully.<br />Our security experts will contact you
+        shortly.</p>
+      <button class="is-explore-btn" id="isExploreBtn">Explore Website →</button>
+      <div class="is-redirect" id="isRedirectNote">Redirecting automatically in 5s…</div>
+    </div>
+  </div>
 
   <!-- ========== PRELOADER ========== -->
   <div id="preloader">
@@ -1710,6 +1840,498 @@
   <script src="script.js"></script>
   <script src="tracker.js"></script>
 
+  <!-- ========== INTAKE WIZARD ENGINE ========== -->
+  <script>
+    (function () {
+      'use strict';
+
+      /* ==============================
+         CONFIGURATION — CHANGE THESE
+         ============================== */
+      // Google Apps Script Web App URL — receives all form data + sends email
+      var SHEETS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxG5CgT6f1t0V4E8XGavtd85RZLPgm58HLQNxN3DthvFZfZWa3v54VzGZpda6ZWy6Jv2w/exec';
+
+      // Google Business Review link — auto-redirects after every submission
+      var GOOGLE_REVIEW_LINK = 'https://g.page/r/CXFNf9cfev1SEAE/review';
+
+      /* ==============================
+         DATA
+         ============================== */
+      var SERVICES = ['Corporate Security', 'Industrial Security', 'Residential Security', 'Commercial Security', 'Event Security', 'VIP Protection', 'Construction Site Security', 'Hospital Security', 'School Security', 'Other'];
+      var GUARDS = ['1–5', '6–10', '11–20', '21–50', '50+', 'Custom'];
+      var TIMELINE = ['Immediately', 'Within 7 Days', 'Within 30 Days', 'Planning for Future'];
+      var DESCRIPTIONS = {
+        'Corporate Security': 'Reception, access control, and floor patrols for offices and HQs.',
+        'Industrial Security': 'Perimeter and shift-based coverage for plants and warehouses.',
+        'Residential Security': 'Gated community and private residence protection teams.',
+        'Commercial Security': 'Retail, mall, and mixed-use property security personnel.',
+        'Event Security': 'Crowd management and access control for gatherings of any size.',
+        'VIP Protection': 'Close protection officers for executives and public figures.',
+        'Construction Site Security': 'Round-the-clock site guarding against theft and trespass.',
+        'Hospital Security': 'Trained personnel for patient, staff, and asset safety.',
+        'School Security': 'Campus gate control and child-safety trained guards.'
+      };
+
+      /* ==============================
+         STATE
+         ============================== */
+      var state = {
+        step: 'name',
+        lead: { name: '', service: '', city: '', state: '', guards: '', requiredDate: '', phone: '', email: '', rating: '', feedback: '' }
+      };
+
+      var STEP_NUM = { name: 1, welcome: 1, service: 2, location: 3, guards: 4, timeline: 5, contact: 6, review: 7 };
+      var TOTAL_STEPS = 7;
+
+      var overlay = document.getElementById('intakeOverlay');
+      var stepArea = document.getElementById('intakeStepArea');
+      var progressWrap = document.getElementById('intakeProgressWrap');
+      var intakeCanvasInitialized = false;
+
+      /* ==============================
+         STARFIELD CANVAS
+         ============================== */
+      function initIntakeCanvas() {
+        if (intakeCanvasInitialized) return;
+        intakeCanvasInitialized = true;
+        var canvas = document.getElementById('intakeCanvas');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+        resize(); window.addEventListener('resize', resize);
+        var stars = [];
+        var count = Math.floor((innerWidth * innerHeight) / 10000);
+        for (var i = 0; i < count; i++) {
+          stars.push({ x: Math.random() * innerWidth, y: Math.random() * innerHeight, r: Math.random() * 1.3 + 0.4, phase: Math.random() * 6.28, speed: 0.4 + Math.random() * 0.5 });
+        }
+        function draw(t) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          for (var i = 0; i < stars.length; i++) {
+            var s = stars[i];
+            var tw = 0.3 + 0.5 * Math.abs(Math.sin(t * 0.0005 * s.speed + s.phase));
+            ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.28);
+            ctx.fillStyle = 'rgba(255,255,255,' + tw + ')'; ctx.fill();
+          }
+          requestAnimationFrame(draw);
+        }
+        requestAnimationFrame(draw);
+
+        // Ping dots
+        var pingsWrap = document.getElementById('intakePings');
+        if (pingsWrap && pingsWrap.children.length === 0) {
+          for (var j = 0; j < 12; j++) {
+            var p = document.createElement('span');
+            p.className = 'intake-ping';
+            p.style.left = ((j * 8.1) % 100) + '%';
+            p.style.animationDelay = (j * 0.8) + 's';
+            p.style.animationDuration = (10 + (j % 5) * 2) + 's';
+            pingsWrap.appendChild(p);
+          }
+        }
+      }
+
+      /* ==============================
+         HELPERS
+         ============================== */
+      function el(html) { var d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstChild; }
+
+      function intakeCard(eyebrow, title, subtitle, bodyHTML) {
+        return el('<div class="intake-card"><p class="intake-eyebrow">' + eyebrow + '</p><h2>' + title + '</h2>' +
+          (subtitle ? '<p class="intake-sub">' + subtitle + '</p>' : '') +
+          '<div style="margin-top:' + (subtitle ? '0' : '1.2rem') + '">' + bodyHTML + '</div></div>');
+      }
+
+      function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+      /* ==============================
+         SHOW / HIDE OVERLAY
+         ============================== */
+      function showIntakeOverlay() {
+        overlay.style.display = 'flex';
+        overlay.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        initIntakeCanvas();
+        render();
+      }
+
+      function hideIntakeOverlay() {
+        overlay.classList.add('hidden');
+        setTimeout(function () {
+          overlay.style.display = 'none';
+          document.body.style.overflow = '';
+        }, 400);
+      }
+
+      /* ==============================
+         RENDER ENGINE
+         ============================== */
+      function render() {
+        progressWrap.style.display = state.step === 'welcome' ? 'none' : 'block';
+        document.getElementById('intakeStepCount').textContent = String(STEP_NUM[state.step]).padStart(2, '0') + ' / 0' + TOTAL_STEPS;
+        document.getElementById('intakeProgressFill').style.width = (STEP_NUM[state.step] / TOTAL_STEPS * 100) + '%';
+        stepArea.innerHTML = '';
+        stepArea.appendChild(renderers[state.step]());
+      }
+
+      /* ==============================
+         STEP RENDERERS
+         ============================== */
+      var renderers = {
+        /* STEP 1 — Name */
+        name: function () {
+          var c = intakeCard('Step 01 · Identification', 'What is your name?', '',
+            '<div class="intake-field"><label>Full name</label><input id="iName" value="' + esc(state.lead.name) + '"/><div class="ierr" id="iNameErr"></div></div>' +
+            '<div class="intake-row"><button class="intake-btn intake-btn-primary" id="iNameNext">Continue</button></div>');
+          setTimeout(function () {
+            var input = c.querySelector('#iName'); if (input) input.focus();
+            c.querySelector('#iNameNext').onclick = function () {
+              var v = input.value.trim();
+              if (v.length < 2) { c.querySelector('#iNameErr').textContent = 'Name should be at least 2 characters.'; return; }
+              state.lead.name = v; state.step = 'welcome'; render();
+            };
+            input.onkeydown = function (e) { if (e.key === 'Enter') c.querySelector('#iNameNext').click(); };
+          });
+          return c;
+        },
+
+        /* STEP 1.5 — Welcome */
+        welcome: function () {
+          var c = el('<div class="intake-card" style="text-align:center">' +
+            '<h1 style="font-size:1.7rem;color:#ff6666">Welcome, ' + esc(state.lead.name) + '.<span class="intake-cursor"></span></h1>' +
+            '<p style="margin-top:.8rem;font-size:1rem;color:#ddd">Welcome to Leopard Security Force.</p>' +
+            '<p style="margin-top:.4rem;color:#888;font-size:.82rem">We\'re here to understand your security requirements.</p>' +
+            '<button class="intake-btn intake-btn-ghost" style="margin-top:1.5rem" id="iWelcomeNext">Continue →</button></div>');
+          setTimeout(function () {
+            var advance = function () { state.step = 'service'; render(); };
+            var timer = setTimeout(advance, 3200);
+            c.querySelector('#iWelcomeNext').onclick = function () { clearTimeout(timer); advance(); };
+          });
+          return c;
+        },
+
+        /* STEP 2 — Service */
+        service: function () {
+          var opts = SERVICES.map(function (s) {
+            return '<button class="intake-opt' + (state.lead.service === s ? ' selected' : '') + '" data-v="' + s + '">' + s + '</button>';
+          }).join('');
+          var c = intakeCard('Step 02 · Requirement', 'Which security service do you need?', '',
+            '<div class="intake-options">' + opts + '</div>' +
+            '<div class="intake-row"><button class="intake-btn intake-btn-ghost" id="iBack">Back</button><button class="intake-btn intake-btn-primary" id="iNext" ' + (state.lead.service ? '' : 'disabled') + '>Continue</button></div>');
+          setTimeout(function () {
+            c.querySelectorAll('.intake-opt').forEach(function (b) {
+              b.onclick = function () { state.lead.service = b.dataset.v; state.step = 'service'; render(); };
+            });
+            c.querySelector('#iBack').onclick = function () { state.step = 'name'; render(); };
+            c.querySelector('#iNext').onclick = function () { state.step = 'location'; render(); };
+          });
+          return c;
+        },
+
+        /* STEP 3 — Location */
+        location: function () {
+          var L = state.lead;
+          var c = intakeCard('Step 03 · Deployment Location', 'Where do you need security services?', '',
+            '<div class="intake-field"><label>City</label><input id="iCity" value="' + esc(L.city) + '"/></div>' +
+            '<div class="intake-field"><label>State</label><input id="iState" value="' + esc(L.state) + '"/></div>' +
+            '<div class="ierr" id="iLocErr"></div>' +
+            '<div class="intake-row"><button class="intake-btn intake-btn-ghost" id="iBack">Back</button><button class="intake-btn intake-btn-primary" id="iNext">Continue</button></div>');
+          setTimeout(function () {
+            c.querySelector('#iCity').focus();
+            c.querySelector('#iBack').onclick = function () { state.step = 'service'; render(); };
+            c.querySelector('#iNext').onclick = function () {
+              var city = c.querySelector('#iCity').value.trim(), st = c.querySelector('#iState').value.trim();
+              if (city.length < 2 || st.length < 2) { c.querySelector('#iLocErr').textContent = 'Please fill in city and state.'; return; }
+              state.lead.city = city; state.lead.state = st; state.step = 'guards'; render();
+            };
+          });
+          return c;
+        },
+
+        /* STEP 4 — Guards */
+        guards: function () {
+          var isPreset = GUARDS.indexOf(state.lead.guards) > -1;
+          var gSel = isPreset ? state.lead.guards : (state.lead.guards ? 'Custom' : '');
+          var custom = isPreset ? '' : state.lead.guards;
+          var opts = GUARDS.map(function (g) { return '<button class="intake-opt' + (gSel === g ? ' selected' : '') + '" data-v="' + g + '">' + g + '</button>'; }).join('');
+          var c = intakeCard('Step 04 · Deployment Size', 'How many security guards are required?', '',
+            '<div class="intake-options">' + opts + '</div>' +
+            '<div id="iCustomWrap" style="margin-top:.8rem;display:' + (gSel === 'Custom' ? 'block' : 'none') + '">' +
+            '<div class="intake-field"><label>Exact number of guards</label><input id="iCustomVal" inputmode="numeric" value="' + custom + '"/><div class="ierr" id="iCustomErr"></div></div></div>' +
+            '<div class="intake-row"><button class="intake-btn intake-btn-ghost" id="iBack">Back</button><button class="intake-btn intake-btn-primary" id="iNext" ' + (gSel ? '' : 'disabled') + '>Continue</button></div>');
+          setTimeout(function () {
+            var sel = gSel;
+            c.querySelectorAll('.intake-opt').forEach(function (b) {
+              b.onclick = function () {
+                sel = b.dataset.v;
+                c.querySelectorAll('.intake-opt').forEach(function (x) { x.classList.remove('selected'); });
+                b.classList.add('selected');
+                c.querySelector('#iCustomWrap').style.display = sel === 'Custom' ? 'block' : 'none';
+                c.querySelector('#iNext').disabled = false;
+              };
+            });
+            c.querySelector('#iBack').onclick = function () { state.step = 'location'; render(); };
+            c.querySelector('#iNext').onclick = function () {
+              if (sel === 'Custom') {
+                var v = (c.querySelector('#iCustomVal') || {}).value ? c.querySelector('#iCustomVal').value.trim() : '';
+                if (!/^\d+$/.test(v) || Number(v) <= 0) { c.querySelector('#iCustomErr').textContent = 'Enter a whole number greater than 0.'; return; }
+                state.lead.guards = v;
+              } else { state.lead.guards = sel; }
+              state.step = 'timeline'; render();
+            };
+          });
+          return c;
+        },
+
+        /* STEP 5 — Timeline */
+        timeline: function () {
+          var opts = TIMELINE.map(function (t) { return '<button class="intake-opt' + (state.lead.requiredDate === t ? ' selected' : '') + '" data-v="' + t + '">' + t + '</button>'; }).join('');
+          var c = intakeCard('Step 05 · Timeline', 'When do you need security services?', '',
+            '<div class="intake-options single">' + opts + '</div>' +
+            '<div class="intake-row"><button class="intake-btn intake-btn-ghost" id="iBack">Back</button><button class="intake-btn intake-btn-primary" id="iNext" ' + (state.lead.requiredDate ? '' : 'disabled') + '>Continue</button></div>');
+          setTimeout(function () {
+            var sel = state.lead.requiredDate;
+            c.querySelectorAll('.intake-opt').forEach(function (b) {
+              b.onclick = function () { sel = b.dataset.v; c.querySelectorAll('.intake-opt').forEach(function (x) { x.classList.remove('selected'); }); b.classList.add('selected'); c.querySelector('#iNext').disabled = false; };
+            });
+            c.querySelector('#iBack').onclick = function () { state.step = 'guards'; render(); };
+            c.querySelector('#iNext').onclick = function () { state.lead.requiredDate = sel; state.step = 'contact'; render(); };
+          });
+          return c;
+        },
+
+        /* STEP 6 — Contact */
+        contact: function () {
+          var L = state.lead;
+          var c = intakeCard('Step 06 · Contact', 'How can our team reach you?', 'We\'ll use this to confirm your requirement and share next steps.',
+            '<div class="intake-field"><label>Phone number</label><input id="iPhone" value="' + esc(L.phone) + '"/><div class="ierr" id="iPhoneErr"></div></div>' +
+            '<div class="intake-field"><label>Email address</label><input id="iEmail" value="' + esc(L.email) + '"/><div class="ierr" id="iEmailErr"></div></div>' +
+            '<div class="intake-row"><button class="intake-btn intake-btn-ghost" id="iBack">Back</button><button class="intake-btn intake-btn-primary" id="iNext">Continue</button></div>');
+          setTimeout(function () {
+            c.querySelector('#iPhone').focus();
+            c.querySelector('#iBack').onclick = function () { state.step = 'timeline'; render(); };
+            c.querySelector('#iNext').onclick = function () {
+              var phone = c.querySelector('#iPhone').value.trim();
+              var email = c.querySelector('#iEmail').value.trim();
+              var phoneOk = /^(?:\+91|0)?[6-9]\d{9}$/.test(phone.replace(/\s+/g, ''));
+              var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+              c.querySelector('#iPhoneErr').textContent = phoneOk ? '' : 'Enter a valid Indian phone number.';
+              c.querySelector('#iEmailErr').textContent = emailOk ? '' : 'Enter a valid email address.';
+              if (!phoneOk || !emailOk) return;
+              state.lead.phone = phone; state.lead.email = email;
+              state.step = 'review'; render();
+            };
+          });
+          return c;
+        },
+
+        /* STEP 7 — Rate & Review */
+        review: function () {
+          var L = state.lead;
+          var rating = L.rating ? Number(L.rating) : 0;
+          var starsHTML = '';
+          for (var i = 1; i <= 5; i++) {
+            starsHTML += '<button class="intake-star-btn' + (i <= rating ? ' active' : '') + '" data-v="' + i + '" aria-label="' + i + ' star">' +
+              '<svg viewBox="0 0 24 24"><polygon points="12 2 15 9 22.5 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 1.5 9.5 9 9"/></svg></button>';
+          }
+          var c = intakeCard('Step 07 · Rate Us', 'Rate your experience with us', 'Your response will be saved automatically after submission.',
+            '<div class="intake-stars" id="iStars">' + starsHTML + '</div>' +
+            '<div class="intake-rating-hint" id="iRatingHint">' + (rating ? ratingHintText(rating) : '') + '</div>' +
+            '<div id="iSubmitErrorBox"></div>' +
+            '<div class="intake-row"><button class="intake-btn intake-btn-ghost" id="iBack">Back</button><button class="intake-btn intake-btn-primary" id="iSubmit" ' + (rating ? '' : 'disabled') + '>Submit</button></div>');
+          setTimeout(function () {
+            var sel = rating;
+            function paintStars() {
+              c.querySelectorAll('.intake-star-btn').forEach(function (b) {
+                b.classList.toggle('active', Number(b.dataset.v) <= sel);
+              });
+            }
+            c.querySelectorAll('.intake-star-btn').forEach(function (b) {
+              b.onclick = function () {
+                sel = Number(b.dataset.v);
+                paintStars();
+                c.querySelector('#iRatingHint').className = 'intake-rating-hint ' + (sel >= 4 ? 'good' : 'low');
+                c.querySelector('#iRatingHint').textContent = ratingHintText(sel);
+                c.querySelector('#iSubmit').disabled = false;
+              };
+            });
+            c.querySelector('#iBack').onclick = function () { state.step = 'contact'; render(); };
+            c.querySelector('#iSubmit').onclick = function () {
+              state.lead.rating = String(sel);
+              state.lead.feedback = '';
+
+              var btn = c.querySelector('#iSubmit');
+              btn.disabled = true; c.querySelector('#iBack').disabled = true;
+              btn.innerHTML = '<span class="intake-spinner"></span>Saving your request…';
+
+              /* --- 1. Auto-redirect to Google Reviews to write review --- */
+              window.open(GOOGLE_REVIEW_LINK, '_blank');
+
+              /* --- 2. Submit to Google Sheets via Apps Script --- */
+              fetch(SHEETS_ENDPOINT, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams(state.lead).toString()
+              }).then(function () {
+                hideIntakeOverlay();
+                showSuccess(sel);
+              }).catch(function (err) {
+                console.error('Sheets submission failed:', err);
+                hideIntakeOverlay();
+                showSuccess(sel);
+              });
+            };
+          });
+          return c;
+        }
+      };
+
+      /* ==============================
+         RATING HELPERS
+         ============================== */
+      function ratingHintText(n) {
+        var labels = { 1: 'We\'re sorry to hear that.', 2: 'We can do better.', 3: 'Thanks — room to improve.', 4: 'Great, glad to hear it!', 5: 'Excellent! That means a lot.' };
+        return labels[n] || '';
+      }
+      function feedbackLabel(n) {
+        if (n >= 4) return 'Write your review (optional)';
+        if (n > 0) return 'What could we do better? (optional)';
+        return 'Write your review (optional)';
+      }
+
+
+
+      /* ==============================
+         EMAIL VIA APPS SCRIPT
+         ============================== */
+      function sendConfirmationEmail(lead) {
+        // Fire a second request to Apps Script with action=sendEmail
+        // The Apps Script should handle this and send an email to the user
+        try {
+          var params = new URLSearchParams(lead);
+          params.append('action', 'sendEmail');
+          fetch(SHEETS_ENDPOINT, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params.toString()
+          });
+        } catch (e) { console.error('Email dispatch failed:', e); }
+      }
+
+      /* ==============================
+         SUCCESS SCREEN
+         ============================== */
+      function showSuccess(rating) {
+        var s = document.getElementById('intakeSuccess');
+        s.classList.add('show');
+        document.getElementById('isThankName').textContent = 'Thank You, ' + (state.lead.name || 'Guest') + '.';
+        var msg = document.getElementById('isThankMsg');
+        if (rating >= 4) {
+          msg.innerHTML = 'Your request has been received successfully and saved to our records.<br/>We just opened Google in a new tab for you.<br/><br/>A confirmation will be sent to your email shortly.';
+        } else if (rating > 0) {
+          msg.innerHTML = 'Your request has been received successfully and saved to our records.<br/>Thanks for the honest feedback — our team will use it to improve.<br/><br/>A confirmation will be sent to your email shortly.';
+        } else {
+          msg.innerHTML = 'Your request has been received successfully.<br/>Our security experts will contact you shortly.';
+        }
+
+        // Twinkling stars for success bg
+        var starsWrap = document.getElementById('isStars'); starsWrap.innerHTML = '';
+        for (var i = 0; i < 35; i++) {
+          var st = document.createElement('span'); st.className = 'is-star';
+          st.style.left = ((i * 14.2) % 100) + '%'; st.style.top = ((i * 27.8) % 100) + '%'; st.style.animationDelay = ((i % 7) * 0.4) + 's';
+          starsWrap.appendChild(st);
+        }
+
+        // Green ping dots
+        var pingsWrap = document.getElementById('isPings'); pingsWrap.innerHTML = '';
+        for (var j = 0; j < 14; j++) {
+          var p = document.createElement('span'); p.className = 'intake-ping-green';
+          p.style.left = ((j * 7.1) % 100) + '%'; p.style.animationDelay = (j * 0.65) + 's'; p.style.animationDuration = (9 + (j % 4) * 2) + 's';
+          pingsWrap.appendChild(p);
+        }
+
+        // Countdown & auto-redirect
+        var secs = 5;
+        var note = document.getElementById('isRedirectNote');
+        var interval = setInterval(function () {
+          secs--; note.textContent = 'Redirecting automatically in ' + secs + 's…';
+          if (secs <= 0) { clearInterval(interval); dismissSuccess(); }
+        }, 1000);
+        document.getElementById('isExploreBtn').onclick = function () { clearInterval(interval); dismissSuccess(); };
+      }
+
+      function dismissSuccess() {
+        var s = document.getElementById('intakeSuccess');
+        s.classList.remove('show');
+        document.body.style.overflow = '';
+      }
+
+      /* ==============================
+         SKIP BUTTON
+         ============================== */
+      document.getElementById('intakeSkipBtn').onclick = function () {
+        hideIntakeOverlay();
+      };
+
+      /* ==============================
+         AUTO-SHOW ON PAGE LOAD
+         ============================== */
+      // Show intake wizard automatically after page loads
+      window.addEventListener('load', function () {
+        // Small delay to let preloader finish
+        setTimeout(function () {
+          showIntakeOverlay();
+        }, 1200);
+      });
+
+      /* ==============================
+         CONTACT US / CTA TRIGGERS
+         ============================== */
+      // Wire up all "Contact Us", "Request a Quote" and CTA buttons to open the intake wizard
+      document.addEventListener('DOMContentLoaded', function () {
+        // Navbar Contact Us button
+        var contactCTA = document.querySelector('.nav-contact-cta');
+        if (contactCTA) {
+          contactCTA.addEventListener('click', function (e) {
+            e.preventDefault();
+            // Reset wizard to start
+            state.step = 'name';
+            showIntakeOverlay();
+          });
+        }
+
+        // Mobile menu Contact Us link
+        var mobileLinks = document.querySelectorAll('.mobile-menu a');
+        mobileLinks.forEach(function (link) {
+          if (link.textContent.trim().toLowerCase() === 'contact us') {
+            link.addEventListener('click', function (e) {
+              e.preventDefault();
+              // Close mobile menu
+              var hamburger = document.getElementById('hamburger');
+              var mobileMenu = document.getElementById('mobileMenu');
+              if (mobileMenu) mobileMenu.classList.remove('open');
+              if (hamburger) hamburger.classList.remove('open');
+              document.body.style.overflow = '';
+              state.step = 'name';
+              showIntakeOverlay();
+            });
+          }
+        });
+
+        // CTA banner "Contact us" button
+        var ctaBtn = document.querySelector('.cta-btn-modern');
+        if (ctaBtn) {
+          ctaBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            state.step = 'name';
+            showIntakeOverlay();
+          });
+        }
+      });
+
+    })();
+  </script>
 
 </body>
 
